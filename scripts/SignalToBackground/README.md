@@ -1,4 +1,4 @@
-# Signal To Background Macro (ImageJ/Fiji)
+# Signal To Background Macro
 
 ## Description
 
@@ -73,7 +73,7 @@ Measurement | Description
 `Background_max` | Maximum intensity in the background area
 `Background_sd` | Standard deviation of intensity in the background area
 
-Results are appended (not overwritten) to the Result_table.txt file each time the macro is used, allowing batch analysis.
+Results are appended (not overwritten) to the `Result_table.txt` file each time the macro is used, allowing batch analysis.
 
 ## Notes
 

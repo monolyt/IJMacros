@@ -1,12 +1,12 @@
-// Signal To Background ImageJ Plugin v1.3
+// Signal To Background ImageJ Plugin v1.4
 // Daniel Barleben
-// Last edit: 2024-05-14
-// Saves more infos than v1.2, including SD values, (optionally) ROIs and has more usable ROI color config
 
-name = "danielba";
-dataPath = "C:/Users/" + name + "/Desktop/SB/";
+// ***** SETUP ******
+name = "danielba"; // Set your windows user name
+dataPath = "C:/Users/" + name + "/Desktop/SB/"; // Set the path where to save the calculated results
+saveROIs = false; // Set to false if you don't want to save the ROIs
 
-// Check if the dataPath directory already exists
+// ***** Check if dataPath already exists ******
 if (!File.isDirectory(dataPath)) {
     // If the directory does not exist, create it
     File.makeDirectory(dataPath);
@@ -20,7 +20,7 @@ if (!File.isDirectory(dataPath)) {
     print("dataPath already exists");
 }
 
-//*********Measure Signal**********
+// ***** Measure signal *****
 run("Clear Results");
 run("Set Measurements...", "area mean standard min median redirect=None decimal=3");
 filename = getTitle;
@@ -43,7 +43,9 @@ roiManager("Set Fill Color", "#5000ff00");
 close(filenameTh);
 selectWindow(filename);
 waitForUser("Please correct artifacts in this selection. Press 'ALT' continuosly and select unwanted artifacts.");
-//roiManager("Save", dataPath + filename + "_Signal.roi");
+if (saveROIs) {
+    roiManager("Save", dataPath + filename + "_Signal.roi");
+}
 run("Measure");
 Signal_mean = getResult("Mean", 0);
 Signal_median = getResult("Median", 0);
@@ -60,7 +62,7 @@ print("Signal SD = " + Signal_sd);
 roiManager("Select", 0);
 roiManager("Delete");
 
-//*******Measure Background**********
+// ***** Measure Background *****
 
 Dialog.create("Measure Background");
 items = newArray("Select Background manually", "Use inverse for Background", "Select Background by threshold");
@@ -75,8 +77,10 @@ if (BackMeth == "Use inverse for Background") {
     roiManager("Add");
     roiManager("Select", 0);
     roiManager("Set Fill Color", "#50ff0000");
-    //roiManager("Rename", filename + "_Background");
-    //roiManager("Save", dataPath + filename + "_Background.roi");
+    if (saveROIs) {
+        roiManager("Rename", filename + "_Background");
+        roiManager("Save", dataPath + filename + "_Background.roi");
+    }
     run("Measure");
 }
 if (BackMeth == "Select Background manually") {
@@ -87,8 +91,10 @@ if (BackMeth == "Select Background manually") {
     roiManager("Add");
     roiManager("Select", 0);
     roiManager("Set Fill Color", "#50ff0000");
-    //roiManager("Rename", filename + "_Background");
-    //roiManager("Save", dataPath + filename + "_Background.roi");
+    if (saveROIs) {
+        roiManager("Rename", filename + "_Background");
+        roiManager("Save", dataPath + filename + "_Background.roi");
+    }
     run("Measure");
 }
 if (BackMeth == "Select Background by threshold") {
@@ -110,12 +116,14 @@ if (BackMeth == "Select Background by threshold") {
     close(filenameThB);
     waitForUser("Please correct wrong selections with 'ALT' ...");
     // Save ROI
-    //roiManager("Delete");
-    //roiManager("Add");
-    //roiManager("Select", 0);
-    //roiManager("Set Fill Color", "#60ff0000");
-    //roiManager("Rename", filename + "_Background");
-    //roiManager("Save", dataPath + filename + "_Background.roi");
+    if (saveROIs) {
+        roiManager("Delete");
+        roiManager("Add");
+        roiManager("Select", 0);
+        roiManager("Set Fill Color", "#60ff0000");
+        roiManager("Rename", filename + "_Background");
+        roiManager("Save", dataPath + filename + "_Background.roi");
+    }
     run("Measure");
 }
 Background_mean = getResult("Mean", 1);
@@ -126,7 +134,7 @@ Background_sd = getResult("StdDev", 1);
 print("Background Mean = " + Background_mean);
 print("Background SD = " + Background_sd);
 
-//*********Calculation***********
+// ***** Calculation *****
 signaltobackground_mean = Signal_mean / Background_mean;
 signaltobackground_median = Signal_median / Background_median;
 signalminusbackground_mean = Signal_mean - Background_mean;
@@ -136,9 +144,9 @@ print("S/B mean = " + signaltobackground_mean);
 print("S-B mean = " + signalminusbackground_mean);
 
 
-// Print the calculated results
+// ***** Print the calculated results *****
 //print("S/B Mean:");
-if (File.exists("C:/Users/" + name + "/Desktop/SB/Result_table.txt")) {
+if (File.exists(dataPath + "Result_table.txt")) {
     File.append(filename + "\t" +
         signaltobackground_mean + "\t" +
         signaltobackground_median + "\t" +
@@ -154,9 +162,9 @@ if (File.exists("C:/Users/" + name + "/Desktop/SB/Result_table.txt")) {
         Background_min + "\t" +
         Background_max + "\t" +
         Background_sd,
-        "C:/Users/" + name + "/Desktop/SB/Result_table.txt");
+        dataPath + "Result_table.txt");
 } else {
-    f = File.open("C:/Users/" + name + "/Desktop/SB/Result_table.txt");
+    f = File.open(dataPath + "Result_table.txt");
     print(f, "Filename" + "\t" +
         "SB_mean" + "\t" +
         "SB_median" + "\t" +
@@ -190,8 +198,8 @@ if (File.exists("C:/Users/" + name + "/Desktop/SB/Result_table.txt")) {
     File.close(f);
 }
 
-// Initialize ROI manager
+// ***** Initialize ROI manager *****
 roiManager("Select", 0);
 roiManager("Delete");
 
-//open("C:\\Users\\"+name+"\\Desktop\\Result_table.txt");
+//open("dataPath + "Result_table.txt");

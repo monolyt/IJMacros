@@ -1,6 +1,6 @@
-// -------------------------------------------------------------
-//  Signal statistics per channel – v3  (May‑2025)
-// -------------------------------------------------------------
+// Batch Signal Statistics ImageJ Plugin v1.0
+// Daniel Barleben
+
 requires("1.54f"); // make sure we're on a reasonably new Fiji
 
 // helper: print with a tiny timestamp so lines stay ordered
@@ -105,7 +105,7 @@ for (i = 0; i < list.length; i++) {
             rename("maskedSlice");
 
             // threshold ignoring zeros
-            run("Auto Threshold", "method=Otsu ignore_black");
+            run("Auto Threshold", "method=MaxEntropy ignore_black"); //MaxEntropy vs. Otsu
             run("Convert to Mask");
             run("Create Selection");
 

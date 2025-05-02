@@ -1,12 +1,11 @@
 // -------------------------------------------------------------
 //  Signal statistics per channel – v3  (May‑2025)
 // -------------------------------------------------------------
-requires("1.54f");          // make sure we're on a reasonably new Fiji
+requires("1.54f"); // make sure we're on a reasonably new Fiji
 
-// ---------------------------------------------------------------------------
 // helper: print with a tiny timestamp so lines stay ordered
 function log(msg) {
-    ms = getTime();               // milliseconds since ImageJ started
+    ms = getTime(); // milliseconds since ImageJ started
     totalSeconds = floor(ms / 1000);
     hours = floor(totalSeconds / 3600) % 24;
     minutes = floor(totalSeconds / 60) % 60;
@@ -16,29 +15,29 @@ function log(msg) {
     print(timeStamp + " " + msg);
 }
 
-// === Choose root directory ==================================================
+// Choose root directory
 mainDir = getDirectory("Choose the main folder containing sub‑folders of image stacks");
 log("> Starting up. Selected path: " + mainDir);
 
-// === Create / overwrite output =============================================
+// Create / overwrite output
 csvPath = mainDir + "signal_statistics.csv";
 File.delete(csvPath);
 File.append("Folder,Image,Channel,Slice,Min,Max,Mean,Median,SD", csvPath);
 log("> Output CSV initialised at " + csvPath);
 
-// === Walk through each sub‑folder ===========================================
+// Walk through each sub‑folder
 list = getFileList(mainDir);
 totalFolders = list.length;
 folderIdx = 0;
 
 for (i = 0; i < list.length; i++) {
     subDir = mainDir + list[i];
-    if (!File.isDirectory(subDir)) continue;        // skip loose files
+    if (!File.isDirectory(subDir)) continue; // skip loose files
     folderIdx++;
 
     log(">> Folder " + folderIdx + " / " + totalFolders + ": " + subDir);
 
-    // -- find the first *.tif / *.tiff in this sub‑folder -------------------
+    // find the first *.tif / *.tiff in this sub‑folder
     firstTif = "";
     files = getFileList(subDir);
     for (f = 0; f < files.length; f++) {
@@ -53,23 +52,23 @@ for (i = 0; i < list.length; i++) {
     log(">> Loading  " + firstTif);
     path = subDir + File.separator + firstTif;
 
-    // === Import once with Bio‑Formats =======================================
+    // Import once with Bio‑Formats
     run("Bio-Formats Importer", "open=[" + path + "] "
         + "color_mode=Composite view=Hyperstack stack_order=XYCZT");
 
     baseTitle = getTitle();
     log(">> Image window: " + baseTitle);
 
-    // === Split channels (do NOT keep the composite) ========================
-    run("Split Channels");           // original is auto‑closed
+    // Split channels
+    run("Split Channels"); // original is auto‑closed
     log(">> Split into channels");
 
     // list of all open image titles AFTER the split
     titles = getList("image.titles");
 
-    // === Loop over every channel stack =====================================
+    // Loop over every channel stack
     for (c = 0; c < titles.length; c++) {
-        if (!startsWith(titles[c], "C")) continue;   // ignore non‑channel windows
+        if (!startsWith(titles[c], "C")) continue; // ignore non‑channel windows
 
         selectWindow(titles[c]);
         channelID = substring(titles[c], 1, indexOf(titles[c], "-"));  // "1", "2", "3"
@@ -77,17 +76,17 @@ for (i = 0; i < list.length; i++) {
 
         log(">>> Channel " + channelID + "  (" + stackSize + " slices)");
 
-        // pick three Z planes ------------------------------------------------
+        // pick three Z planes
         sliceIdx = newArray(3);
         sliceIdx[0] = maxOf(1, floor(stackSize * 0.30));
         sliceIdx[1] = maxOf(1, floor(stackSize * 0.50));
         sliceIdx[2] = maxOf(1, floor(stackSize * 0.70));
 
-        // process each chosen slice -----------------------------------------
+        // process each chosen slice
         for (s = 0; s < sliceIdx.length; s++) {
             setSlice(sliceIdx[s]);
 
-            run("Duplicate...", "title=measureSlice");     // working copy
+            run("Duplicate...", "title=measureSlice"); // working copy
             selectWindow("measureSlice");
 
             run("Median...", "radius=1");

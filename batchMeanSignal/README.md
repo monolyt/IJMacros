@@ -6,8 +6,6 @@ This ImageJ/Fiji macro automatically extracts **signal statistics** from multi-c
 
 Ideal for high-throughput quantification of signal intensity in multichannel imaging experiments.
 
----
-
 ## Setup
 
 1. Save the macro file (`SignalStatsPerChannel.ijm`) in your Fiji `macros` directory or anywhere accessible.
@@ -16,8 +14,6 @@ Ideal for high-throughput quantification of signal intensity in multichannel ima
 4. When prompted, select the **root directory** containing your image subfolders.
 
 > The macro assumes each subfolder contains a single image stack (TIFF format), which may be a multi-channel Z-stack.
-
----
 
 ## Process Workflow
 
@@ -33,8 +29,6 @@ Ideal for high-throughput quantification of signal intensity in multichannel ima
 3. Export results into a single CSV file:
    - Located in the root folder
    - Named `signal_statistics.csv`
-
----
 
 ## Output
 
@@ -52,16 +46,12 @@ Column | Description
 `Median` | Median intensity inside the ROI
 `SD` | Standard deviation of intensity inside the ROI
 
----
-
 ## Limitations
 
 - Only the **first TIFF file** per subfolder is processed.
 - Assumes all image stacks are **multi-channel 3D**.
 - If no ROI is detected on a slice (e.g., too dim), that slice is skipped.
 - Uses fixed Z-slice positions (30%, 50%, 70%); full-stack averaging not implemented.
-
----
 
 ## Example Folder Structure
 

@@ -1,48 +1,56 @@
-// Batch Signal Statistics ImageJ Plugin v1.0
-// Daniel Barleben
+// -------------------------------------------------------------
+//  Signal statistics per channel
+// -------------------------------------------------------------
+requires("1.54f");
 
-requires("1.54f"); // make sure we're on a reasonably new Fiji
+// Adjustable threshold range
+selectMin = 100;
+selectMax = 65535;
 
-// helper: print with a tiny timestamp so lines stay ordered
+//batchMode
+setBatchMode(true);
+
+// Helper: timestamped logging
 function log(msg) {
-    ms = getTime(); // milliseconds since ImageJ started
+    ms = getTime();
     totalSeconds = floor(ms / 1000);
-    hours = floor(totalSeconds / 3600) % 24;
-    minutes = floor(totalSeconds / 60) % 60;
-    seconds = totalSeconds % 60;
-
-    timeStamp = IJ.pad(hours, 2) + ":" + IJ.pad(minutes, 2) + ":" + IJ.pad(seconds, 2);
+    h = floor(totalSeconds / 3600) % 24;
+    m = floor(totalSeconds / 60) % 60;
+    s = totalSeconds % 60;
+    timeStamp = IJ.pad(h, 2) + ":" + IJ.pad(m, 2) + ":" + IJ.pad(s, 2);
     print(timeStamp + " " + msg);
 }
 
-// Choose root directory
+// Choose base folder
 mainDir = getDirectory("Choose the main folder containing sub‑folders of image stacks");
 log("> Starting up. Selected path: " + mainDir);
 
-// Create / overwrite output
+// Output CSV
 csvPath = mainDir + "signal_statistics.csv";
 File.delete(csvPath);
 File.append("Folder,Image,Channel,Slice,Min,Max,Mean,Median,SD", csvPath);
 log("> Output CSV initialised at " + csvPath);
 
-// Walk through each sub‑folder
+// Loop through subdirectories
 list = getFileList(mainDir);
 totalFolders = list.length;
 folderIdx = 0;
 
 for (i = 0; i < list.length; i++) {
     subDir = mainDir + list[i];
-    if (!File.isDirectory(subDir)) continue; // skip loose files
+    if (!File.isDirectory(subDir)) continue;
     folderIdx++;
-
     log(">> Folder " + folderIdx + " / " + totalFolders + ": " + subDir);
 
-    // find the first *.tif / *.tiff in this sub‑folder
+    // Find first TIFF
     firstTif = "";
     files = getFileList(subDir);
     for (f = 0; f < files.length; f++) {
         lc = toLowerCase(files[f]);
-        if (endsWith(lc, ".tif") || endsWith(lc, ".tiff")) { firstTif = files[f]; break; }
+        if (endsWith(lc, ".tif") || endsWith(lc, ".tiff")) {
+            firstTif = files[f];
+            break;
+        }
     }
     if (firstTif == "") {
         log("# ! No TIFF found – skipped.");
@@ -52,61 +60,38 @@ for (i = 0; i < list.length; i++) {
     log(">> Loading  " + firstTif);
     path = subDir + File.separator + firstTif;
 
-    // Import once with Bio‑Formats
-    run("Bio-Formats Importer", "open=[" + path + "] "
-        + "color_mode=Composite view=Hyperstack stack_order=XYCZT");
-
+    run("Bio-Formats Importer", "open=[" + path + "] color_mode=Composite view=Hyperstack stack_order=XYCZT");
     baseTitle = getTitle();
     log(">> Image window: " + baseTitle);
 
-    // Split channels
-    run("Split Channels"); // original is auto‑closed
+    run("Split Channels");
     log(">> Split into channels");
-
-    // list of all open image titles AFTER the split
     titles = getList("image.titles");
 
-    // Loop over every channel stack
     for (c = 0; c < titles.length; c++) {
-        if (!startsWith(titles[c], "C")) continue; // ignore non‑channel windows
+        if (!startsWith(titles[c], "C")) continue;
 
         selectWindow(titles[c]);
-        channelID = substring(titles[c], 1, indexOf(titles[c], "-"));  // "1", "2", "3"
+        channelID = substring(titles[c], 1, indexOf(titles[c], "-"));
         stackSize = nSlices;
-
         log(">>> Channel " + channelID + "  (" + stackSize + " slices)");
 
-        // pick three Z planes
+        // Choose slices at 30%, 50%, 70%
         sliceIdx = newArray(3);
         sliceIdx[0] = maxOf(1, floor(stackSize * 0.30));
         sliceIdx[1] = maxOf(1, floor(stackSize * 0.50));
         sliceIdx[2] = maxOf(1, floor(stackSize * 0.70));
 
-        // process each chosen slice
         for (s = 0; s < sliceIdx.length; s++) {
             setSlice(sliceIdx[s]);
-
-            run("Duplicate...", "title=measureSlice"); // working copy
+            run("Duplicate...", "title=measureSlice");
             selectWindow("measureSlice");
 
             run("Median...", "radius=1");
             run("Subtract Background...", "rolling=50");
 
-            // mask of non‑zero pixels
-            run("Duplicate...", "title=nonZeroMask");
-            selectWindow("nonZeroMask");
-            setThreshold(50, 65535);
-            run("Convert to Mask");
-
-            // apply mask
-            selectWindow("measureSlice");
-            imageCalculator("Multiply create", "measureSlice", "nonZeroMask");
-            selectWindow("Result of measureSlice");
-            rename("maskedSlice");
-
-            // threshold ignoring zeros
-            run("Auto Threshold", "method=MaxEntropy ignore_black"); //MaxEntropy vs. Otsu
-            run("Convert to Mask");
+            // Do not convert to mask! Stay in 16-bit and apply threshold
+            setThreshold(selectMin, selectMax);
             run("Create Selection");
 
             if (selectionType != -1) {
@@ -127,7 +112,7 @@ for (i = 0; i < list.length; i++) {
                 close("Results");
 
                 row = list[i] + "," + firstTif + ",C" + channelID + "," + sliceIdx[s] + ","
-                    + minVal + "," + maxVal + "," + meanVal + "," + medVal + "," + sdVal + "\n";
+                    + minVal + "," + maxVal + "," + meanVal + "," + medVal + "," + sdVal;
                 File.append(row, csvPath);
 
                 log(">>>> SUCCESS > Slice " + sliceIdx[s] + ":  Mean " + meanVal + "  ±  SD " + sdVal
@@ -136,12 +121,11 @@ for (i = 0; i < list.length; i++) {
                 log(">>>> FAILED > Slice " + sliceIdx[s] + ":  No ROI – skipped.");
             }
 
-            // tidy up
-            close("nonZeroMask"); close("maskedSlice"); close("measureSlice");
-        } // end slice loop
+            close("measureSlice");
+        }
 
-        close(titles[c]);  // close this channel stack
-    } // end channel loop
-} // end sub‑folder loop
+        close(titles[c]);
+    }
+}
 
 log("> Done. All statistics saved to: " + csvPath);

@@ -25,9 +25,9 @@ function setColors(color1, color2, color3, color4) {
     }
 }
 
-function saveOpenImages(openWindows) {
+function saveOpenImages(openWindows, saveFormat) {
     getMinAndMax(min, max);
-    saveAs("PNG", exportPath + openWindows[i]);
+    saveAs(saveFormat, exportPath + openWindows[i]);
     print("Image saved.");
     // Initialize the log file if it doesn't exist
     if (!File.exists(logFilePath)) {
@@ -115,7 +115,7 @@ for (var i = 0; i < openWindows.length; i++) {
     Stack.setActiveChannels("10");
     //rename("N17-" + (i + 1) + "-" + "GFP");
 
-    //saveOpenImages(openWindows);
+    //saveOpenImages(openWindows, "PNG");
     //saveVideos(openWindows);
     //saveAllChannels(openWindows[i]);
 

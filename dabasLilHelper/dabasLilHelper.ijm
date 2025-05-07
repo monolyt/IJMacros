@@ -87,7 +87,9 @@ function saveAllChannels(currentImage) {
 */
 
 // Path for export
-exportPath = "G:/Export/";
+//exportPath = "G:/Export/";
+exportPath = getDirectory("Choose export path: " + exportPath);
+
 // Path for logging gray values
 logFilePath = exportPath + "grayValues.txt";
 
